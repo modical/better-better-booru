@@ -152,8 +152,18 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 	};
 
 	Element.prototype.bbbInfo = function(name, value) {
-		// Retrieve or set info in post data attributes.
-		if (typeof(value) !== "undefined")
+		// Retrieve or set info in data attributes.
+		var imgContainer = (this.tagName === "HTML" ? getId("image-container", this) : undefined);
+
+		if (imgContainer) { // Pseudo document.bbbInfo for retrieved pages.
+			if (typeof(value) !== "undefined")
+				imgContainer.setAttribute("data-" + name, value);
+			else if (name)
+				return imgContainer.getAttribute("data-" + name);
+			else
+				return scrapePost(this);
+		}
+		else if (typeof(value) !== "undefined")
 			this.setAttribute("data-" + name, value);
 		else if (name)
 			return this.getAttribute("data-" + name);
@@ -376,17 +386,16 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 			resize_link_style: newOption("dropdown", "full", "Resize Link Style", "Set how the resize links in the post sidebar options section will display. <tipdesc>Full:</tipdesc> Show the \"resize to window\", \"resize to window width\", and \"resize to window height\" links on separate lines. <tipdesc>Minimal:</tipdesc> Show the \"resize to window\" (W&H), \"resize to window width\" (W), and \"resize to window height\" (H) links on one line.", {txtOptions:["Full:full", "Minimal:minimal"]}),
 			search_add: newOption("dropdown", "disabled", "Search Add", "Modify the sidebar tag list by adding, removing, or replacing links in the sidebar tag list that modify the current search's tags. <tipdesc>Remove:</tipdesc> Remove any preexisting \"+\" and \"&ndash;\" links. <tipdesc>Link:</tipdesc> Add \"+\" and \"&ndash;\" links to modified versions of the current search that include or exclude their respective tags. <tipdesc>Toggle:</tipdesc> Add toggle links that modify the search box with their respective tags. Clicking a toggle link will switch between a tag being included (+), excluded (&ndash;), potentially included among other tags (~), and removed (&raquo;). Right clicking a toggle link will immediately remove its tag. If a tag already exists in the search box or gets entered/removed through alternative means, the toggle link will automatically update to reflect the tag's current status. <tiphead>Note</tiphead>The remove option is intended for users above the basic user level that want to remove the links. For users that can't normally see the links and do not wish to see them, this setting should be set to disabled.", {txtOptions:["Disabled:disabled", "Remove:remove", "Link:link", "Toggle:toggle"]}),
 			search_tag_scrollbars: newOption("dropdown", 0, "Search Tag Scrollbars", "Limit the length of the sidebar tag list for the search listing by restricting it to a set height in pixels. When the list exceeds the set height, a scrollbar will be added to allow the rest of the list to be viewed.", {txtOptions:["Disabled:0"], numList:[50,100,150,200,250,300,350,400,450,500,550,600,650,700,750,800,850,900,950,1000,1050,1100,1150,1200,1250,1300,1350,1400,1450,1500]}),
-			show_banned: newOption("checkbox", false, "Show Banned", "Display all banned posts in the search, pool, popular, favorites, comments, and favorite group listings."),
+			show_banned: newOption("checkbox", false, "Show Banned", "Display all banned posts in the search, pool, popular, favorites, comments, and favorite group listings by using \"hidden\" placeholders.<tiphead>Note</tiphead>This option only affects users below the gold account level."),
 			show_deleted: newOption("checkbox", false, "Show Deleted", "Display all deleted posts in the search, pool, popular, favorites, and favorite group listings. <tiphead>Note</tiphead>When using this option, your Danbooru account settings should have \"deleted post filter\" set to no and \"show deleted children\" set to yes in order to function properly and minimize connections to Danbooru."),
-			show_loli: newOption("checkbox", false, "Show Loli", "Display loli posts in the search, pool, popular, favorites, comments, and favorite group listings."),
+			show_loli: newOption("checkbox", false, "Show Loli", "Display loli posts in the search, pool, popular, favorites, comments, and favorite group listings by using \"hidden\" placeholders.<tiphead>Note</tiphead>This option only affects users below the gold account level."),
 			show_resized_notice: newOption("dropdown", "all", "Show Resized Notice", "Set which image type(s) the purple notice bar about image resizing is allowed to display on. <tiphead>Tip</tiphead>When a sample and original image are available for a post, a new option for swapping between the sample and original image becomes available in the sidebar options menu. Even if you disable the resized notice bar, you will always have access to its main function.", {txtOptions:["None (Disabled):none", "Original:original", "Sample:sample", "Original & Sample:all"]}),
-			show_shota: newOption("checkbox", false, "Show Shota", "Display shota posts in the search, pool, popular, favorites, comments, and favorite group listings."),
-			show_toddlercon: newOption("checkbox", false, "Show Toddlercon", "Display toddlercon posts in the search, pool, popular, favorites, comments, and favorite group listings."),
+			show_shota: newOption("checkbox", false, "Show Shota", "Display shota posts in the search, pool, popular, favorites, comments, and favorite group listings by using \"hidden\" placeholders.<tiphead>Note</tiphead>This option only affects users below the gold account level."),
+			show_toddlercon: newOption("checkbox", false, "Show Toddlercon", "Display toddlercon posts in the search, pool, popular, favorites, comments, and favorite group listings by using \"hidden\" placeholders.<tiphead>Note</tiphead>This option only affects users below the gold account level."),
 			single_color_borders: newOption("checkbox", false, "Single Color Borders", "Only use one color for each thumbnail border."),
-			thumb_cache_limit: newOption("dropdown", 5000, "Thumbnail Info Cache Limit", "Limit the number of thumbnail information entries cached in the browser.<tiphead>Note</tiphead>No actual thumbnails are cached. Only filename information used to speed up the display of hidden thumbnails is stored. Every 1000 entries is approximately equal to 0.1 megabytes of space.", {txtOptions:["Disabled:0"], numList:[1000,2000,3000,4000,5000,6000,7000,8000,9000,10000]}),
 			thumb_info: newOption("dropdown", "disabled", "Thumbnail Info", "Display the score (&#x2605;), favorite count (&hearts;), and rating (S, Q, or E) for a post with its thumbnail. <tipdesc>Below:</tipdesc> Display the extra information below thumbnails. <tipdesc>Hover:</tipdesc> Display the extra information upon hovering over a thumbnail's area. <tiphead>Note</tiphead>Extra information will not be added to the thumbnails in the comments listing since the score and rating are already visible there. Instead, the number of favorites will be added next to the existing score display.", {txtOptions:["Disabled:disabled", "Below:below", "Hover:hover"]}),
 			thumbnail_count: newOption("dropdown", 0, "Thumbnail Count", "Change the number of thumbnails that display in the search and favorites listings.", {txtOptions:["Disabled:0"], numRange:[1,200]}),
-			thumbnail_count_default: newOption("dropdown", 20, "Thumbnail Count Default", "Change the number of thumbnails that BBB should expect Danbooru to return per a page.<tiphead>Note</tiphead>This option only affects logged in users and should only be changed from 20 by users <b>above the basic account level that have changed their account setting for posts per page</b>.", {txtOptions:["Disabled:0"], numRange:[1,100]}),
+			thumbnail_count_default: newOption("dropdown", 20, "Thumbnail Count Default", "Change the number of thumbnails that BBB should expect Danbooru to return per a page.<tiphead>Note</tiphead>This option only affects users above the basic account level. It should only be changed from 20 by users <b>that have changed their account setting for posts per page</b>.", {txtOptions:["Disabled:0"], numRange:[1,100]}),
 			track_new: newOption("checkbox", false, "Track New Posts", "Add a menu option titled \"new\" to the posts section submenu (between \"listing\" and \"upload\") that links to a customized search focused on keeping track of new posts.<tiphead>Note</tiphead>While browsing the new posts, the current page of posts is also tracked. If the new post listing is left, clicking the \"new\" link later on will attempt to pull up the posts where browsing was left off at.<tiphead>Tip</tiphead>If you would like to bookmark the new post listing, drag and drop the link to your bookmarks or right click it and bookmark/copy the location from the context menu."),
 			video_volume: newOption("dropdown", "disabled", "Video Volume", "Set the default volume of videos or remember your volume settings across videos. <tipdesc>Remember:</tipdesc> Set the video to the last volume level and muted status used. <tipdesc>Muted:</tipdesc> Always set the video volume to muted. <tipdesc>5% - 100%:</tipdesc> Always set the video volume level to the specified percent. <tiphead>Note</tiphead>This option can not control the volume of flash videos.", {txtOptions:["Disabled:disabled", "Remember:remember", "Muted:muted", "5%:0.05", "10%:0.1", "15%:0.15", "20%:0.2", "25%:0.25", "30%:0.30", "35%:0.35", "40%:0.4", "45%:0.45", "50%:0.5", "55%:0.55", "60%:0.6", "65%:0.65", "70%:0.7", "75%:0.75", "80%:0.8", "85%:0.85", "90%:0.9", "95%:0.95", "100%:1"]}),
 			collapse_sidebar_data: {post: {}, thumb: {}},
@@ -412,6 +421,7 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 			sidebar: newSection("general", ["remove_tag_headers", "post_tag_scrollbars", "search_tag_scrollbars", "autohide_sidebar", "fixed_sidebar", "collapse_sidebar"], "Tag Sidebar"),
 			misc: newSection("general", ["direct_downloads", "track_new", "clean_links", "arrow_nav", "post_tag_titles", "search_add", "page_counter", "comment_score", "quick_search"], "Misc."),
 			misc_layout: newSection("general", ["fixed_paginator"], "Misc."),
+			placeholder: newSection("general", ["show_loli", "show_shota", "show_toddlercon", "show_banned"], "Post Placeholders"),
 			script_settings: newSection("general", ["bypass_api", "manage_cookies", "enable_status_message", "resize_link_style", "override_blacklist", "override_resize", "override_sample", "disable_tagged_filenames", "thumbnail_count_default"], "Script Settings"),
 			status_borders: newSection("border", "status_borders", "Custom Status Borders", "When using custom status borders, the borders can be edited here. For easy color selection, use one of the many free tools on the internet like <a target=\"_blank\" href=\"http://www.quackit.com/css/css_color_codes.cfm\">this one</a>."),
 			tag_borders: newSection("border", "tag_borders", "Custom Tag Borders", "When using custom tag borders, the borders can be edited here. For easy color selection, use one of the many free tools on the internet like <a target=\"_blank\" href=\"http://www.quackit.com/css/css_color_codes.cfm\">this one</a>.")
@@ -434,10 +444,10 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 
 	// Script variables.
 	// Global
-	var show_loli = false;
-	var show_shota = false;
-	var show_toddlercon = false;
-	var show_banned = false;
+	var show_loli = (isGoldLevel() ? true : bbb.user.show_loli);
+	var show_shota = (isGoldLevel() ? true : bbb.user.show_shota);
+	var show_toddlercon = (isGoldLevel() ? true : bbb.user.show_toddlercon);
+	var show_banned = (isGoldLevel() ? true : bbb.user.show_banned);
 	var deleted_shown = (gLoc === "search" && /^(?:any|deleted)$/i.test(getTagVar("status"))); // Check whether deleted posts are shown by default.
 	var show_deleted = deleted_shown || bbb.user.show_deleted;
 	var direct_downloads = bbb.user.direct_downloads;
@@ -495,8 +505,7 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 	var search_add = bbb.user.search_add;
 	var search_tag_scrollbars = bbb.user.search_tag_scrollbars;
 	var thumbnail_count = bbb.user.thumbnail_count;
-	var thumbnail_count_default = (isLoggedIn() ? bbb.user.thumbnail_count_default : 20);
-	var thumb_cache_limit = bbb.user.thumb_cache_limit;
+	var thumbnail_count_default = (isGoldLevel() ? bbb.user.thumbnail_count_default : 20);
 
 	// Post
 	var alternate_image_swap = bbb.user.alternate_image_swap;
@@ -669,10 +678,6 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 			fetchJSON(parentUrl, mode, optArg);
 			bbbStatus("posts", "new");
 		}
-		else if (mode === "ugoira") {
-			fetchJSON(url.replace(/\/posts\/(\d+)/, "/posts/$1.json"), "ugoira");
-			bbbStatus("posts", "new");
-		}
 	}
 
 	function fetchJSON(url, mode, optArg, session, retries) {
@@ -710,8 +715,6 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 							parseComments(formatInfoArray(xml));
 						else if (mode === "parent" || mode === "child")
 							parseRelations(formatInfoArray(xml), mode, optArg);
-						else if (mode === "ugoira")
-							fixHiddenUgoira(xml);
 
 						if (mode !== "pool_cache" && mode !== "favorite_group_cache")
 							bbbStatus("posts", "done");
@@ -779,9 +782,6 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 		// Fix the paginator. The paginator isn't always in the new container, so run this on the whole page after the new container is inserted.
 		fixPaginator();
 
-		// Fix hidden thumbnails.
-		fixHiddenThumbs();
-
 		// Update the URL with the limit value.
 		fixURLLimit();
 	}
@@ -791,19 +791,20 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 		var postInfo = bbb.post.info = document.bbbInfo();
 		var imgContainer = document.getElementById("image-container");
 
-		if (!imgContainer) {
+		if (!imgContainer || !postInfo) {
 			bbbNotice("Post content could not be located.", -1);
 			return;
 		}
 
-		if (!postInfo || !postInfo.file_url) {
-			bbbNotice("Due to a lack of provided information, this post cannot be viewed.", -1);
+		// Stop if we're on Safebooru and the image isn't safe or if the image is hidden.
+		if (!postInfo.file_url || safebPostTest(postInfo)) {
+			createOptionsSection();
+			modifyResizeLink();
+			autoscrollPost();
+			blacklistUpdate();
+			checkRelations();
 			return;
 		}
-
-		// Stop if we're on Safebooru and the image isn't safe.
-		if (safebPostTest(postInfo))
-			return;
 
 		// Enable the "Resize to window", "Toggle Notes", "Random Post", and "Find similar" options for logged out users.
 		createOptionsSection();
@@ -857,8 +858,6 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 
 				if (postInfo.pixiv_ugoira_frame_data.data) // Set up the post.
 					ugoiraInit();
-				else // Fix hidden posts.
-					searchJSON("ugoira");
 			}
 		}
 		else if (!postInfo.image_height) // Create manual download.
@@ -1143,27 +1142,6 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 			target = bbb.el.resizeNotice || document.getElementById("image-container");
 			target.parentNode.insertBefore(newNotice, target);
 		}
-
-		// Fix hidden thumbnails.
-		fixHiddenThumbs();
-	}
-
-	function fixHiddenUgoira(xml) {
-		// Use xml info to fix the missing info for hidden ugoira posts.
-		var postInfo = bbb.post.info;
-		postInfo.pixiv_ugoira_frame_data = xml.pixiv_ugoira_frame_data;
-
-		var imgContainer = document.getElementById("image-container");
-		var ugoira = (imgContainer ? imgContainer.getElementsByTagName("canvas")[0] : undefined);
-
-		if (ugoira) {
-			// Fix the missing data attributes.
-			ugoira.bbbInfo("ugoira-content-type", postInfo.pixiv_ugoira_frame_data.content_type);
-			ugoira.bbbInfo("ugoira-frames", JSON.stringify(postInfo.pixiv_ugoira_frame_data.data));
-
-			// Set up the post.
-			ugoiraInit();
-		}
 	}
 
 	function endlessXMLJSONHandler(xml, optArg) {
@@ -1208,13 +1186,6 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 			fetchPages(url, "post_comments", optArg);
 			bbbStatus("post_comments", "new");
 		}
-		else if (mode === "hidden") {
-			url = "/posts/" + optArg;
-			bbb.flags.hidden_xml = true;
-
-			fetchPages(url, "hidden", optArg);
-			bbbStatus("hidden", "new");
-		}
 		else if (mode === "account_check") {
 			url = "/users/" + optArg + "/edit";
 
@@ -1253,12 +1224,6 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 							replaceThumbnails(docEl);
 							bbbStatus("posts", "done");
 						}
-						else if (mode === "hidden") {
-							bbb.flags.hidden_xml = false;
-
-							replaceHidden(docEl);
-							bbbStatus("hidden", "done");
-						}
 						else if (mode === "endless") {
 							bbb.flags.endless_xml = false;
 
@@ -1277,11 +1242,7 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 							var linkId = uniqueIdNum(); // Create a unique ID.
 							var msg; // If/else variable.
 
-							if (mode === "hidden") {
-								msg = "Error retrieving hidden thumbnails";
-								bbbStatus("hidden", "error");
-							}
-							else if (mode === "thumbnails" || mode === "endless") {
+							if (mode === "thumbnails" || mode === "endless") {
 								msg = "Error retrieving post information";
 								bbbStatus("posts", "error");
 							}
@@ -1330,24 +1291,8 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 		var comments = commentSection.getElementsByClassName("comment");
 		var numComments = comments.length;
 		var toShow = 6; // Number of comments to display.
-		var postInfo = docEl.bbbInfo();
-		var previewImg = commentDiv.getElementsByTagName("img")[0];
 		var target = commentDiv.getElementsByClassName("comments-for-post")[0];
 		var newContent = document.createDocumentFragment();
-
-		// Fix the image.
-		if (postInfo.preview_file_url && commentDiv.bbbInfo("md5") === "") {
-			if (postInfo.file_url) {
-				commentDiv.bbbInfo("md5", postInfo.md5);
-				commentDiv.bbbInfo("file-ext", postInfo.file_ext);
-				commentDiv.bbbInfo("file-url", postInfo.file_url);
-				commentDiv.bbbInfo("large-file-url", postInfo.large_file_url);
-			}
-
-			previewImg.src = postInfo.preview_img_src;
-			previewImg.alt = /([^\/\_]+)\.\w+$/.exec(postInfo.preview_file_url)[1];
-			commentDiv.bbbInfo("preview-file-url", postInfo.preview_file_url);
-		}
 
 		// Fix the comments.
 		if (numComments > toShow) {
@@ -1387,59 +1332,6 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 		fixURLLimit();
 	}
 
-	function replaceHidden(docEl) {
-		// Fix the hidden image placeholders with information from a post.
-		var hiddenImgs = document.getElementsByClassName("bbb-hidden-thumb");
-		var article = hiddenImgs[0];
-
-		// Hidden thumbnails no longer exist in the page so stop.
-		if (!article)
-			return;
-
-		var previewImg = article.getElementsByTagName("img")[0];
-		var hiddenId = article.bbbInfo("id");
-		var bcc = bbb.cache.current;
-		var postInfo = docEl.bbbInfo();
-
-		if (String(postInfo.id) !== hiddenId) // Out of sync. Reset.
-			searchPages("hidden", hiddenId);
-		else if (postInfo.preview_file_url) { // Update the thumbnail with the correct information.
-			if (postInfo.file_url) {
-				article.bbbInfo("md5", postInfo.md5);
-				article.bbbInfo("file-ext", postInfo.file_ext);
-				article.bbbInfo("file-url", postInfo.file_url);
-				article.bbbInfo("large-file-url", postInfo.large_file_url);
-				article.bbbInfo("file-url-desc", postInfo.file_url_desc);
-
-				// Fix ddl.
-				postDDL(article);
-			}
-
-			previewImg.src = postInfo.preview_img_src;
-			article.bbbInfo("preview-file-url", postInfo.preview_file_url);
-
-			bcc.history.push(hiddenId);
-			bcc.names[hiddenId] = /[^\/\_]+$/.exec(postInfo.file_url || postInfo.preview_file_url)[0];
-
-			article.bbbRemoveClass("bbb-hidden-thumb");
-
-			// Continue to the next image or finish by updating the cache.
-			if (hiddenImgs[0]) {
-				hiddenId = hiddenImgs[0].bbbInfo("id");
-				searchPages("hidden", hiddenId);
-			}
-			else
-				updateThumbCache();
-		}
-		else { // The image information couldn't be found.
-			bbb.flags.hidden_xml = true; // Flag the XML as active to signal a problem and disable further attempts.
-
-			updateThumbCache();
-			bbbNotice("Error retrieving thumbnail information.", -1);
-			bbbStatus("hidden", "error");
-		}
-	}
-
 	function endlessXMLPageHandler(docEl) {
 		// Take thumbnails from a page and pass them to the queue or retrieve hidden posts as necessary.
 		bbb.endless.new_paginator = getPaginator(docEl);
@@ -1471,18 +1363,6 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 		createCookie("bbb_acc_check", 0, -1);
 	}
 
-	function isThere(url) {
-		// Checks if file exists. Thanks to some random forum!
-		var req = new XMLHttpRequest(); // XMLHttpRequest object.
-		try {
-			req.open("HEAD", url, false);
-			req.send(null);
-			return (req.status === 200 ? true : false);
-		} catch(er) {
-			return false;
-		}
-	}
-
 	/* Functions for retrieving page info */
 	function scrapePost(docEl) {
 		// Retrieve info from the current document or a supplied element containing the HTML with it and return it as API styled info.
@@ -1495,19 +1375,14 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 
 		var postEl = postContent.el;
 		var postTag = (postEl ? postEl.tagName : undefined);
-		var dataInfo = imgContainer.getAttribute("data-file-url");
-		var directLink = getId("image-resize-link", target) || target.querySelector("#post-information ul li a[href^='/data/']");
-		var otherInfo = getMeta("twitter:image", target) || getMeta("og:image", target);
 		var flags = imgContainer.getAttribute("data-flags");
-		var dataPath = ((dataInfo || directLink || otherInfo || "").indexOf("/cached/") > -1 ? "/cached/data/" : "/data/");
-		var infoValues; // If/else variable.
 
 		var imgInfo = {
-			md5: "",
-			file_ext: "",
-			file_url: "",
-			large_file_url: "",
-			preview_file_url: "",
+			md5: imgContainer.getAttribute("data-md5"),
+			file_ext: imgContainer.getAttribute("data-file-ext"),
+			file_url: imgContainer.getAttribute("data-file-url"),
+			large_file_url: imgContainer.getAttribute("data-large-file-url"),
+			preview_file_url: imgContainer.getAttribute("data-preview-file-url"),
 			has_large: undefined,
 			id: Number(imgContainer.getAttribute("data-id")),
 			pixiv_id: Number(imgContainer.getAttribute("data-pixiv-id")) || null,
@@ -1535,69 +1410,28 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 			image_width: Number(imgContainer.getAttribute("data-width")) || null
 		};
 
-		// Try to extract the file's name and extension.
-		if (dataInfo)
-			infoValues = [dataInfo, (/__.+__/.exec(dataInfo) || [])[0], imgContainer.getAttribute("data-md5"), imgContainer.getAttribute("data-file-ext")];
-		else if (directLink)
-			infoValues = /data\/(__.+__)?(\w+)\.(\w+)/.exec(directLink.href);
-		else if (otherInfo)
-			infoValues = (otherInfo.indexOf("sample") > -1 ? /data\/sample\/(__.+__)?sample-(\w+)\.\w/.exec(otherInfo) : /data\/(__.+__)?(\w+)\.(\w+)/.exec(otherInfo));
+		imgInfo.has_large = (imgInfo.large_file_url !== imgInfo.file_url ? true : false);
 
-		if (infoValues) {
-			var filenameTags = infoValues[1] || "";
-			var md5 = infoValues[2];
-			var ext = infoValues[3];
+		var isUgoira = (postTag === "CANVAS" || (imgInfo.file_ext === "zip" && /(?:^|\s)ugoira(?:$|\s)/.test(imgInfo.tag_string)));
 
-			// Test for the original image file extension if it is unknown.
-			if (!ext && imgInfo.image_width) {
-				var testExt = ["jpg", "png", "gif", "jpeg", "webm", "mp4"];
-
-				for (var i = 0, il = testExt.length; i < il; i++) {
-					if (isThere("/data/" + md5 + "." + testExt[i])) {
-						ext = testExt[i];
-						break;
-					}
-				}
+		if (isUgoira) {
+			if (postTag === "CANVAS") {
+				imgInfo.pixiv_ugoira_frame_data = {
+					id: undefined, // Don't have this value.
+					post_id: imgInfo.id,
+					data: parseJson(postEl.getAttribute("data-ugoira-frames"), []),
+					content_type: postEl.getAttribute("data-ugoira-content-type").replace(/"/gi, "")
+				};
 			}
-
-			var isUgoira = (postTag === "CANVAS" || (ext === "zip" && /(?:^|\s)ugoira(?:$|\s)/.test(imgInfo.tag_string)));
-			var isAnimatedImg = /(?:^|\s)animated_(?:gif|png)(?:$|\s)/.test(imgInfo.tag_string);
-			var isBigImg = (imgInfo.image_width > 850 && ext !== "swf" && ext !== "webm" && ext !== "mp4");
-
-			if (isUgoira) {
-				if (postTag === "CANVAS") {
-					imgInfo.pixiv_ugoira_frame_data = {
-						id: undefined, // Don't have this value.
-						post_id: imgInfo.id,
-						data: parseJson(postEl.getAttribute("data-ugoira-frames"), []),
-						content_type: postEl.getAttribute("data-ugoira-content-type").replace(/"/gi, "")
-					};
-				}
-				else {
-					imgInfo.pixiv_ugoira_frame_data = {
-						id: "", // Don't have this value.
-						post_id: imgInfo.id,
-						data: "",
-						content_type: ""
-					};
-				}
+			else {
+				imgInfo.pixiv_ugoira_frame_data = {
+					id: "", // Don't have this value.
+					post_id: imgInfo.id,
+					data: "",
+					content_type: ""
+				};
 			}
-
-			imgInfo.has_large = (!isAnimatedImg && (isBigImg || isUgoira) ? true : false);
-			imgInfo.md5 = md5;
-			imgInfo.file_ext = ext;
-			imgInfo.file_url = dataPath + filenameTags + md5 + "." + ext;
-			imgInfo.preview_file_url = (!imgInfo.image_height || ext === "swf" ? "/images/download-preview.png" : "/data/preview/" + md5 + ".jpg");
-
-			if (isUgoira)
-				imgInfo.large_file_url = dataPath + "sample/" + filenameTags + "sample-" + md5 + ".webm";
-			else if (imgInfo.has_large)
-				imgInfo.large_file_url = dataPath + "sample/" + filenameTags + "sample-" + md5 + ".jpg";
-			else
-				imgInfo.large_file_url = dataPath + filenameTags + md5 + "." + ext;
 		}
-		else if (otherInfo === "/images/download-preview.png")
-			imgInfo.preview_file_url = "/images/download-preview.png";
 
 		return formatInfo(imgInfo);
 	}
@@ -1812,6 +1646,16 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 			return metaTag.content;
 		else
 			return undefined;
+	}
+
+	function getUserData(name) {
+		// Get user account data from the body data attributes.
+		var value = document.body.getAttribute("data-user-" + name);
+
+		if (bbbIsNum(value))
+			value = Number(value);
+
+		return value;
 	}
 
 	function getVar(urlVar, targetUrl) {
@@ -2082,6 +1926,7 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 
 		generalPage.bbbSection(bbb.sections.browse);
 		generalPage.bbbSection(bbb.sections.control);
+		generalPage.bbbSection(bbb.sections.placeholder);
 		generalPage.bbbSection(bbb.sections.endless);
 		generalPage.bbbSection(bbb.sections.misc);
 
@@ -3201,9 +3046,6 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 		if (bbb.settings.changed.track_new && !bbb.user.track_new && bbb.user.track_new_data.viewed) // Reset new post tracking if it has been disabled.
 			bbb.user.track_new_data = bbb.options.track_new_data.def;
 
-		if (bbb.settings.changed.thumb_cache_limit && thumb_cache_limit !== bbb.user.thumb_cache_limit) // Trim down the thumb cache as necessary if the limit has changed.
-			adjustThumbCache();
-
 		if (bbb.settings.changed.thumbnail_count) // Update the link limit values if the user has changed the value.
 			fixLimit(bbb.user.thumbnail_count);
 
@@ -3248,15 +3090,6 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 		if (isOldVersion(userVer)) {
 			switch (userVer) {
 				case "6.0.2":
-					// Temporary special tests for users that used the test version.
-					if (/500$/.test(bbb.user.thumb_cache_limit))
-						bbb.user.thumb_cache_limit = bbb.options.thumb_cache_limit.def;
-
-					if (!/\.(jpg|gif|png)/.test(localStorage.getItem("bbb_thumb_cache"))) {
-						localStorage.removeItem("bbb_thumb_cache");
-						loadThumbCache();
-					}
-
 					if (bbb.user.tag_scrollbars === "false")
 						bbb.user.tag_scrollbars = 0;
 
@@ -3264,12 +3097,6 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 				case "6.2":
 				case "6.2.1":
 				case "6.2.2":
-					// Reset the thumb cache to deal with "download-preview" and incorrect extension entries.
-					if (localStorage.getItem("bbb_thumb_cache")) {
-						localStorage.removeItem("bbb_thumb_cache");
-						loadThumbCache();
-					}
-
 					// Convert the old hide_original_notice setting to the new show_resized_notice setting that replaces it.
 					if (bbb.user.hide_original_notice)
 						bbb.user.show_resized_notice = "sample";
@@ -3322,10 +3149,6 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 					}
 
 				case "7.0":
-					// Reduce the maximum thumb cache limit.
-					if (bbb.user.thumb_cache_limit > 10000)
-						bbb.user.thumb_cache_limit = 10000;
-
 				case "7.1":
 				case "7.2":
 				case "7.2.1":
@@ -3609,7 +3432,7 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 		if (!image)
 			return;
 
-		image.bbbOverrideClick(function(event) {
+		image.bbbOverrideClick(function() {
 			if (!Danbooru.Note.TranslationMode.active && !bbb.drag_scroll.moved)
 				Danbooru.Note.Box.toggle_all();
 		});
@@ -3762,7 +3585,7 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 		var image = document.getElementById("image");
 
 		if (postInfo.has_large && image) {
-			image.bbbOverrideClick(function(event) {
+			image.bbbOverrideClick(function() {
 				if (!Danbooru.Note.TranslationMode.active && !bbb.drag_scroll.moved)
 						swapPost();
 			});
@@ -3781,7 +3604,7 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 		var infoSection = document.getElementById("post-information");
 		var options = document.createElement("section");
 		options.id = "post-options";
-		options.innerHTML = '<h1>Options</h1><ul><li><a href="#" id="image-resize-to-window-link">Resize to window</a></li><li>Download</li><li><a id="random-post" href="http://danbooru.donmai.us/posts/random">Random post</a></li><li><a href="http://danbooru.iqdb.org/db-search.php?url=http://danbooru.donmai.us' + postInfo.preview_file_url + '">Find similar</a></li></ul>';
+		options.innerHTML = '<h1>Options</h1><ul><li><a href="#" id="image-resize-to-window-link">Resize to window</a></li><li>Download</li><li><a id="random-post" href="http://danbooru.donmai.us/posts/random">Random post</a></li>' + (postInfo.preview_file_url ? '<li><a href="http://danbooru.iqdb.org/db-search.php?url=http://danbooru.donmai.us' + postInfo.preview_file_url + '">Find similar</a></li>' : '') + '</ul>';
 		infoSection.parentNode.insertBefore(options, infoSection.nextElementSibling);
 	}
 
@@ -4736,54 +4559,6 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 		danbModeMenu(target);
 	}
 
-	function checkHiddenThumbs(postInfo) {
-		// Alter a hidden thumbnail's post info with cache info or queue it for the cache.
-		if (!postInfo.md5) {
-			if (!bbb.cache.stored.history)
-				loadThumbCache();
-
-			var cacheName = bbb.cache.stored.names[postInfo.id];
-
-			if (cacheName) { // Load the thumbnail info from the cache.
-				if (cacheName === "download-preview.png")
-					postInfo.preview_file_url = "/images/download-preview.png";
-				else {
-					var cacheValues = cacheName.split(".");
-					var cacheMd5 = cacheValues[0];
-					var cacheExt = cacheValues[1];
-					var fileDesc = (disable_tagged_filenames ? "" : postFileUrlDesc(postInfo));
-					var isUgoira = (cacheExt === "zip" && /(?:^|\s)ugoira(?:$|\s)/.test(postInfo.tag_string));
-					var dataPath = (postInfo.id <= 1000000 ? "/cached/data/" : "/data/");
-
-					postInfo.md5 = cacheMd5;
-					postInfo.file_ext = cacheExt;
-					postInfo.preview_file_url = (!postInfo.image_height || cacheExt === "swf" ? "/images/download-preview.png" : "/data/preview/" + cacheMd5 + ".jpg");
-					postInfo.file_url = dataPath + fileDesc + cacheName;
-
-					if (isUgoira)
-						postInfo.large_file_url = dataPath + "sample/" + fileDesc + "sample-" + cacheMd5 + ".webm";
-					else if (postInfo.has_large)
-						postInfo.large_file_url = dataPath + "sample/" + fileDesc + "sample-" + cacheMd5 + ".jpg";
-					else
-						postInfo.large_file_url = dataPath + fileDesc + cacheName;
-				}
-			}
-			else // Mark hidden img for fixing.
-				postInfo.thumb_class = (postInfo.thumb_class || "") + " bbb-hidden-thumb";
-		}
-	}
-
-	function fixHiddenThumbs() {
-		// Fix hidden thumbnails by fetching the info from a page.
-		if (bbb.flags.hidden_xml)
-			return;
-
-		var hiddenImgs = document.getElementsByClassName("bbb-hidden-thumb");
-
-		if (hiddenImgs[0])
-			searchPages("hidden", hiddenImgs[0].bbbInfo("id"));
-	}
-
 	function createThumbHTML(postInfo, query) {
 		// Create a thumbnail HTML string.
 		return '<article class="post-preview' + postInfo.thumb_class + '" id="post_' + postInfo.id + '" data-id="' + postInfo.id + '" data-has-sound="' + postInfo.has_sound + '" data-tags="' + postInfo.tag_string + '" data-pools="' + postInfo.pool_string + '" data-uploader="' + postInfo.uploader_name + '" data-rating="' + postInfo.rating + '" data-width="' + postInfo.image_width + '" data-height="' + postInfo.image_height + '" data-flags="' + postInfo.flags + '" data-parent-id="' + postInfo.parent_id + '" data-has-children="' + postInfo.has_children + '" data-score="' + postInfo.score + '" data-fav-count="' + postInfo.fav_count + '" data-approver-id="' + postInfo.approver_id + '" data-pixiv-id="' + postInfo.pixiv_id + '" data-md5="' + postInfo.md5 + '" data-file-ext="' + postInfo.file_ext + '" data-file-url="' + postInfo.file_url + '" data-large-file-url="' + postInfo.large_file_url + '" data-preview-file-url="' + postInfo.preview_file_url + '" data-source="' + postInfo.source + '" data-is-favorited="' + postInfo.is_favorited + '"><a href="/posts/' + postInfo.id + query + '"><img src="' + postInfo.preview_img_src + '" alt="' + postInfo.tag_string + '"></a></article>';
@@ -4925,77 +4700,6 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 			else
 				thumbContainer.insertBefore(newContainer, before);
 		}
-	}
-
-	function loadThumbCache() {
-		// Initialize or load up the thumbnail cache.
-		var thumbCache = loadData("bbb_thumb_cache");
-
-		if (thumbCache !== null)
-			bbb.cache.stored = parseJson(thumbCache, {history: [], names: {}});
-		else {
-			bbb.cache.stored = {history: [], names: {}};
-			saveData("bbb_thumb_cache", JSON.stringify(bbb.cache.stored));
-		}
-	}
-
-	function updateThumbCache() {
-		// Add the current new thumbnail info to the saved thumbnail information.
-		if (!bbb.cache.current.history[0] || !thumb_cache_limit)
-			return;
-
-		loadThumbCache();
-
-		var bcc = bbb.cache.current;
-		var bcs = bbb.cache.stored;
-		var i, il; // Loop variables.
-
-		// Make sure we don't have duplicates in the new info.
-		for (i = 0, il = bcc.history.length; i < il; i++) {
-			if (bcs.names[bcc.history[i]]) {
-				delete bcc.names[bcc.history[i]];
-				bcc.history.splice(i, 1);
-				il--;
-				i--;
-			}
-		}
-
-		// Add the new thumbnail info in.
-		for (i in bcc.names) {
-			if (bcc.names.hasOwnProperty(i))
-				bcs.names[i] = bcc.names[i];
-		}
-
-		bcs.history = bcs.history.concat(bcc.history);
-
-		// Prune the cache if it's larger than the user limit.
-		if (bcs.history.length > thumb_cache_limit) {
-			var removedIds = bcs.history.splice(0, bcs.history.length - thumb_cache_limit);
-
-			for (i = 0, il = removedIds.length; i < il; i++)
-				delete bcs.names[removedIds[i]];
-		}
-
-		saveData("bbb_thumb_cache", JSON.stringify(bcs));
-		bbb.cache.current = {history: [], names: {}};
-	}
-
-	function adjustThumbCache() {
-		// Prune the cache if it's larger than the user limit.
-		loadThumbCache();
-
-		thumb_cache_limit = bbb.user.thumb_cache_limit;
-
-		var bcs = bbb.cache.stored;
-
-		if (bcs.history.length > thumb_cache_limit) {
-			var removedIds = bcs.history.splice(0, bcs.history.length - thumb_cache_limit);
-
-			for (var i = 0, il = removedIds.length; i < il; i++)
-				delete bcs.names[removedIds[i]];
-		}
-
-		saveData("bbb_thumb_cache", JSON.stringify(bcs));
 	}
 
 	function getIdCache() {
@@ -5606,10 +5310,6 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 
 		// Replace the paginator.
 		replacePaginator(firstPageObject.paginator);
-
-		// Fix hidden thumbnails.
-		fixHiddenThumbs();
-		bbbStatus("hidden", "new"); // Update status message with new amount.
 
 		if (!bbb.endless.fill_first_page)
 			bbb.endless.append_page = false;
@@ -6283,7 +5983,6 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 			searchPages(gLoc);
 
 		// Cache any necessary info before leaving the page.
-		window.addEventListener("beforeunload", updateThumbCache);
 		window.addEventListener("beforeunload", saveStateCache);
 	}
 
@@ -6303,9 +6002,6 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 		postInfo.approver_id = postInfo.approver_id || "";
 		postInfo.parent_id = postInfo.parent_id || "";
 		postInfo.pixiv_id = postInfo.pixiv_id || "";
-
-		// Update hidden posts with cached filename info.
-		checkHiddenThumbs(postInfo);
 
 		// Figure out sample image dimensions and ratio.
 		postInfo.large_ratio = (postInfo.image_width > 850 ? 850 / postInfo.image_width : 1);
@@ -6669,8 +6365,7 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 		if (!status) {
 			bbb.status = { // Status messages.
 				msg: {
-					post_comments: {txt: "Fixing hidden comments... ", count: 0},
-					hidden: {txt: "Fixing hidden thumbnails... ", count: 0, queue: document.getElementsByClassName("bbb-hidden-thumb")}, // Hidden thumbnail message.
+					post_comments: {txt: "Loading hidden comments... ", count: 0},
 					posts: {txt: "Loading post info... ", count: 0} // General message for XML requests for hidden posts.
 				},
 				count: 0
@@ -9116,8 +8811,8 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 	}
 
 	function useAPI() {
-		// Determine whether any options that require the API are enabled.
-		if ((show_loli || show_shota || show_toddlercon || (show_deleted && !deleted_shown) || show_banned) && (isLoggedIn() || !bypass_api))
+		// Determine whether the API will be needed for any options.
+		if (((!isGoldLevel() && (show_loli || show_shota || show_toddlercon || show_banned)) || (show_deleted && !deleted_shown)) && (isLoggedIn() || !bypass_api))
 			return true;
 		else
 			return false;
@@ -9140,6 +8835,11 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 				history.replaceState(state, "");
 			}
 		}
+	}
+
+	function isGoldLevel() {
+		// Determine whether the user is at the gold account level or higher.
+		return (getUserData("level") >= 30 ? true : false);
 	}
 
 	function accountSettingCheck(scriptSetting) {
