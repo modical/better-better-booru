@@ -324,7 +324,6 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 		options: { // Setting options and data.
 			bbb_version: "7.4.1",
 			alternate_image_swap: newOption("checkbox", false, "Alternate Image Swap", "Switch between the sample and original image by clicking the image. <tiphead>Note</tiphead>Notes can be toggled by using the link in the sidebar options section."),
-			arrow_nav: newOption("checkbox", false, "Arrow Navigation", "Allow the use of the left and right arrow keys to navigate pages. <tiphead>Note</tiphead>This option has no effect on individual posts."),
 			autohide_sidebar: newOption("dropdown", "none", "Auto-hide Sidebar", "Hide the sidebar for posts, favorites listings, and/or searches until the mouse comes close to the left side of the window or the sidebar gains focus.<tiphead>Tips</tiphead>By using Danbooru's hotkey for the letter \"Q\" to place focus on the search box, you can unhide the sidebar.<br><br>Use the \"thumbnail count\" option to get the most out of this feature on search listings.", {txtOptions:["Disabled:none", "Favorites:favorites", "Posts:post", "Searches:search", "Favorites & Posts:favorites post", "Favorites & Searches:favorites search", "Posts & Searches:post search", "All:favorites post search"]}),
 			autoscroll_post: newOption("dropdown", "none", "Auto-scroll Post", "Automatically scroll a post to a particular point. <tipdesc>Below Header:</tipdesc> Scroll the window down until the header is no longer visible or scrolling is no longer possible. <tipdesc>Post Content:</tipdesc> Position the post content as close as possible to the left and top edges of the window viewport when initially loading a post. Using this option will also scroll past any notices above the content.", {txtOptions:["Disabled:none", "Below Header:header", "Post Content:post"]}),
 			blacklist_add_bars: newOption("checkbox", false, "Additional Bars", "Add a blacklist bar to the comment search listing and individually linked comments so that blacklist entries can be toggled as needed."),
@@ -419,7 +418,7 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 			endless: newSection("general", ["endless_default", "endless_session_toggle", "endless_separator", "endless_scroll_limit", "endless_remove_dup", "endless_pause_interval", "endless_fill", "endless_preload"], "Endless Pages"),
 			notices: newSection("general", ["show_resized_notice", "minimize_status_notices", "hide_sign_up_notice", "hide_upgrade_notice", "hide_hidden_notice", "hide_tos_notice", "hide_comment_notice", "hide_tag_notice", "hide_upload_notice", "hide_pool_notice", "hide_ban_notice"], "Notices"),
 			sidebar: newSection("general", ["remove_tag_headers", "post_tag_scrollbars", "search_tag_scrollbars", "autohide_sidebar", "fixed_sidebar", "collapse_sidebar"], "Tag Sidebar"),
-			misc: newSection("general", ["direct_downloads", "track_new", "clean_links", "arrow_nav", "post_tag_titles", "search_add", "page_counter", "comment_score", "quick_search"], "Misc."),
+			misc: newSection("general", ["direct_downloads", "track_new", "clean_links", "post_tag_titles", "search_add", "page_counter", "comment_score", "quick_search"], "Misc."),
 			misc_layout: newSection("general", ["fixed_paginator"], "Misc."),
 			placeholder: newSection("general", ["show_loli", "show_shota", "show_toddlercon", "show_banned"], "Post Placeholders"),
 			script_settings: newSection("general", ["bypass_api", "manage_cookies", "enable_status_message", "resize_link_style", "override_blacklist", "override_resize", "override_sample", "disable_tagged_filenames", "thumbnail_count_default"], "Script Settings"),
@@ -501,7 +500,6 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 	var hide_hidden_notice = bbb.user.hide_hidden_notice;
 
 	// Search
-	var arrow_nav = bbb.user.arrow_nav;
 	var search_add = bbb.user.search_add;
 	var search_tag_scrollbars = bbb.user.search_tag_scrollbars;
 	var thumbnail_count = bbb.user.thumbnail_count;
@@ -580,8 +578,6 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 	postLinkQuery();
 
 	postDDL();
-
-	arrowNav();
 
 	fixLimit();
 
@@ -796,124 +792,132 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 			return;
 		}
 
-		// Stop if we're on Safebooru and the image isn't safe or if the image is hidden.
-		if (!postInfo.file_url || safebPostTest(postInfo)) {
+		if (!postInfo.file_url || safebPostTest(postInfo)) { // Modify everything except the post content if we're on Safebooru and the image isn't safe or if the image is hidden.
+			// Enable the "Resize to window", "Toggle Notes", "Random Post", and "Find similar" options for logged out users.
 			createOptionsSection();
+
+			// Replace the "resize to window" link with new resize links.
 			modifyResizeLink();
+
+			// Auto position the content if desired.
 			autoscrollPost();
+
+			// Blacklist.
 			blacklistUpdate();
+
+			// Fix the parent/child notice(s).
 			checkRelations();
-			return;
 		}
+		else {
+			// Enable the "Resize to window", "Toggle Notes", "Random Post", and "Find similar" options for logged out users.
+			createOptionsSection();
 
-		// Enable the "Resize to window", "Toggle Notes", "Random Post", and "Find similar" options for logged out users.
-		createOptionsSection();
+			// Fix the direct post links in the information and options sections for hidden posts.
+			fixPostDownloadLinks();
 
-		// Fix the direct post links in the information and options sections for hidden posts.
-		fixPostDownloadLinks();
+			// Replace the "resize to window" link with new resize links.
+			modifyResizeLink();
 
-		// Replace the "resize to window" link with new resize links.
-		modifyResizeLink();
+			// Keep any original video from continuing to play/download after being removed.
+			var origVideo = imgContainer.getElementsByTagName("video")[0];
 
-		// Keep any original video from continuing to play/download after being removed.
-		var origVideo = imgContainer.getElementsByTagName("video")[0];
-
-		if (origVideo) {
-			origVideo.pause();
-			origVideo.src = "about:blank";
-			origVideo.load();
-		}
-
-		// Create content.
-		if (postInfo.file_ext === "swf") // Create flash object.
-			imgContainer.innerHTML = '<div id="note-container"></div> <div id="note-preview"></div> <object height="' + postInfo.image_height + '" width="' + postInfo.image_width + '"> <params name="movie" value="' + postInfo.file_img_src + '"> <embed allowscriptaccess="never" src="' + postInfo.file_img_src + '" height="' + postInfo.image_height + '" width="' + postInfo.image_width + '"> </params> </object> <p><a href="' + postInfo.file_img_src + '">Save this flash (right click and save)</a></p>';
-		else if (postInfo.file_ext === "webm" || postInfo.file_ext === "mp4") { // Create video
-			var playerLoop = (postInfo.has_sound ? '' : ' loop="loop"'); // No looping for videos with sound.
-
-			imgContainer.innerHTML = '<div id="note-container"></div> <div id="note-preview"></div> <video id="image" autoplay="autoplay"' + playerLoop + ' controls="controls" src="' + postInfo.file_img_src + '" height="' + postInfo.image_height + '" width="' + postInfo.image_width + '"></video> <p><a href="' + postInfo.file_img_src + '">Save this video (right click and save)</a></p>';
-
-			videoVolume();
-		}
-		else if (postInfo.file_ext === "zip" && /(?:^|\s)ugoira(?:$|\s)/.test(postInfo.tag_string)) { // Create ugoira
-			var useUgoiraOrig = getVar("original");
-
-			// Get rid of all the old events handlers.
-			if (Danbooru.Ugoira && Danbooru.Ugoira.player)
-				$(Danbooru.Ugoira.player).unbind();
-
-			if ((load_sample_first && useUgoiraOrig !== "1") || useUgoiraOrig === "0") { // Load sample webm version.
-				imgContainer.innerHTML = '<div id="note-container"></div> <div id="note-preview"></div> <video id="image" autoplay="autoplay" loop="loop" controls="controls" src="' + postInfo.large_file_img_src + '" height="' + postInfo.image_height + '" width="' + postInfo.image_width + '" data-fav-count="' + postInfo.fav_count + '" data-flags="' + postInfo.flags + '" data-has-active-children="' + postInfo.has_active_children + '" data-has-children="' + postInfo.has_children + '" data-large-height="' + postInfo.large_height + '" data-large-width="' + postInfo.large_width + '" data-original-height="' + postInfo.image_height + '" data-original-width="' + postInfo.image_width + '" data-rating="' + postInfo.rating + '" data-score="' + postInfo.score + '" data-tags="' + postInfo.tag_string + '" data-pools="' + postInfo.pool_string + '" data-uploader="' + postInfo.uploader_name + '"></video> <p><a href="' + postInfo.large_file_img_src + '">Save this video (right click and save)</a> | <a href="' + updateURLQuery(location.href, {original: "1"}) + '">View original</a> | <a href="#" id="bbb-note-toggle">Toggle notes</a></p>';
-
-				// Prep the "toggle notes" link.
-				noteToggleLinkInit();
-			}
-			else { // Load original ugoira version.
-				imgContainer.innerHTML = '<div id="note-container"></div> <div id="note-preview"></div> <canvas data-ugoira-content-type="' + postInfo.pixiv_ugoira_frame_data.content_type.replace(/"/g, "&quot;") + '" data-ugoira-frames="' + JSON.stringify(postInfo.pixiv_ugoira_frame_data.data).replace(/"/g, "&quot;") + '" data-fav-count="' + postInfo.fav_count + '" data-flags="' + postInfo.flags + '" data-has-active-children="' + postInfo.has_active_children + '" data-has-children="' + postInfo.has_children + '" data-large-height="' + postInfo.image_height + '" data-large-width="' + postInfo.image_width + '" data-original-height="' + postInfo.image_height + '" data-original-width="' + postInfo.image_width + '" data-rating="' + postInfo.rating + '" data-score="' + postInfo.score + '" data-tags="' + postInfo.tag_string + '" data-pools="' + postInfo.pool_string + '" data-uploader="' + postInfo.uploader_name + '" height="' + postInfo.image_height + '" width="' + postInfo.image_width + '" id="image"></canvas> <div id="ugoira-controls"> <div id="ugoira-control-panel" style="width: ' + postInfo.image_width + 'px; min-width: 350px;"> <button id="ugoira-play" name="button" style="display: none;" type="submit">Play</button> <button id="ugoira-pause" name="button" type="submit">Pause</button> <div id="seek-slider" style="width: ' + (postInfo.image_width - 81) + 'px; min-width: 269px;"></div> </div> <p id="save-video-link"><a href="' + postInfo.large_file_img_src + '">Save as video (right click and save)</a> | <a href="' + updateURLQuery(location.href, {original: "0"}) + '">View sample</a> | <a href="#" id="bbb-note-toggle">Toggle notes</a></p> </div>';
-
-				// Make notes toggle when clicking the ugoira animation.
-				noteToggleInit();
-
-				// Prep the "toggle notes" link. The "toggle notes" link is added here just for consistency's sake.
-				noteToggleLinkInit();
-
-				if (postInfo.pixiv_ugoira_frame_data.data) // Set up the post.
-					ugoiraInit();
-			}
-		}
-		else if (!postInfo.image_height) // Create manual download.
-			imgContainer.innerHTML = '<div id="note-container"></div> <div id="note-preview"></div><p><a href="' + postInfo.file_img_src + '">Save this file (right click and save)</a></p>';
-		else { // Create image
-			var imgDesc = (getMeta("og:title") || "").replace(" - Danbooru", "");
-			var newWidth, newHeight, newUrl; // If/else variables.
-
-			if (load_sample_first && postInfo.has_large) {
-				newWidth = postInfo.large_width;
-				newHeight = postInfo.large_height;
-				newUrl = postInfo.large_file_img_src;
-			}
-			else {
-				newWidth = postInfo.image_width;
-				newHeight = postInfo.image_height;
-				newUrl = postInfo.file_img_src;
+			if (origVideo) {
+				origVideo.pause();
+				origVideo.src = "about:blank";
+				origVideo.load();
 			}
 
-			imgContainer.innerHTML = '<div id="note-container"></div> <div id="note-preview"></div> <img alt="' + postInfo.tag_string + '" data-fav-count="' + postInfo.fav_count + '" data-flags="' + postInfo.flags + '" data-has-active-children="' + postInfo.has_active_children + '" data-has-children="' + postInfo.has_children + '" data-large-height="' + postInfo.large_height + '" data-large-width="' + postInfo.large_width + '" data-original-height="' + postInfo.image_height + '" data-original-width="' + postInfo.image_width + '" data-rating="' + postInfo.rating + '" data-score="' + postInfo.score + '" data-tags="' + postInfo.tag_string + '" data-pools="' + postInfo.pool_string + '" data-uploader="' + postInfo.uploader_name + '" height="' + newHeight + '" width="' + newWidth + '" id="image" src="' + newUrl + '" /> <img src="about:blank" height="1" width="1" id="bbb-loader" style="position: absolute; right: 0px; top: 0px; display: none;"/> <p class="desc">' + imgDesc + '</p>';
+			// Create content.
+			if (postInfo.file_ext === "swf") // Create flash object.
+				imgContainer.innerHTML = '<div id="note-container"></div> <div id="note-preview"></div> <object height="' + postInfo.image_height + '" width="' + postInfo.image_width + '"> <params name="movie" value="' + postInfo.file_img_src + '"> <embed allowscriptaccess="never" src="' + postInfo.file_img_src + '" height="' + postInfo.image_height + '" width="' + postInfo.image_width + '"> </params> </object> <p><a href="' + postInfo.file_img_src + '">Save this flash (right click and save)</a></p>';
+			else if (postInfo.file_ext === "webm" || postInfo.file_ext === "mp4") { // Create video
+				var playerLoop = (postInfo.has_sound ? '' : ' loop="loop"'); // No looping for videos with sound.
 
-			bbb.el.bbbLoader = document.getElementById("bbb-loader");
+				imgContainer.innerHTML = '<div id="note-container"></div> <div id="note-preview"></div> <video id="image" autoplay="autoplay"' + playerLoop + ' controls="controls" src="' + postInfo.file_img_src + '" height="' + postInfo.image_height + '" width="' + postInfo.image_width + '"></video> <p><a href="' + postInfo.file_img_src + '">Save this video (right click and save)</a></p>';
 
-			// Create/replace the elements related to image swapping and set them up.
-			swapImageInit();
+				videoVolume();
+			}
+			else if (postInfo.file_ext === "zip" && /(?:^|\s)ugoira(?:$|\s)/.test(postInfo.tag_string)) { // Create ugoira
+				var useUgoiraOrig = getVar("original");
 
-			if (alternate_image_swap) // Make sample/original images swap when clicking the image.
-				alternateImageSwap();
-			else // Make notes toggle when clicking the image.
-				noteToggleInit();
+				// Get rid of all the old events handlers.
+				if (Danbooru.Ugoira && Danbooru.Ugoira.player)
+					$(Danbooru.Ugoira.player).unbind();
+
+				if ((load_sample_first && useUgoiraOrig !== "1") || useUgoiraOrig === "0") { // Load sample webm version.
+					imgContainer.innerHTML = '<div id="note-container"></div> <div id="note-preview"></div> <video id="image" autoplay="autoplay" loop="loop" controls="controls" src="' + postInfo.large_file_img_src + '" height="' + postInfo.image_height + '" width="' + postInfo.image_width + '" data-fav-count="' + postInfo.fav_count + '" data-flags="' + postInfo.flags + '" data-has-active-children="' + postInfo.has_active_children + '" data-has-children="' + postInfo.has_children + '" data-large-height="' + postInfo.large_height + '" data-large-width="' + postInfo.large_width + '" data-original-height="' + postInfo.image_height + '" data-original-width="' + postInfo.image_width + '" data-rating="' + postInfo.rating + '" data-score="' + postInfo.score + '" data-tags="' + postInfo.tag_string + '" data-pools="' + postInfo.pool_string + '" data-uploader="' + postInfo.uploader_name + '"></video> <p><a href="' + postInfo.large_file_img_src + '">Save this video (right click and save)</a> | <a href="' + updateURLQuery(location.href, {original: "1"}) + '">View original</a> | <a href="#" id="bbb-note-toggle">Toggle notes</a></p>';
+
+					// Prep the "toggle notes" link.
+					noteToggleLinkInit();
+				}
+				else { // Load original ugoira version.
+					imgContainer.innerHTML = '<div id="note-container"></div> <div id="note-preview"></div> <canvas data-ugoira-content-type="' + postInfo.pixiv_ugoira_frame_data.content_type.replace(/"/g, "&quot;") + '" data-ugoira-frames="' + JSON.stringify(postInfo.pixiv_ugoira_frame_data.data).replace(/"/g, "&quot;") + '" data-fav-count="' + postInfo.fav_count + '" data-flags="' + postInfo.flags + '" data-has-active-children="' + postInfo.has_active_children + '" data-has-children="' + postInfo.has_children + '" data-large-height="' + postInfo.image_height + '" data-large-width="' + postInfo.image_width + '" data-original-height="' + postInfo.image_height + '" data-original-width="' + postInfo.image_width + '" data-rating="' + postInfo.rating + '" data-score="' + postInfo.score + '" data-tags="' + postInfo.tag_string + '" data-pools="' + postInfo.pool_string + '" data-uploader="' + postInfo.uploader_name + '" height="' + postInfo.image_height + '" width="' + postInfo.image_width + '" id="image"></canvas> <div id="ugoira-controls"> <div id="ugoira-control-panel" style="width: ' + postInfo.image_width + 'px; min-width: 350px;"> <button id="ugoira-play" name="button" style="display: none;" type="submit">Play</button> <button id="ugoira-pause" name="button" type="submit">Pause</button> <div id="seek-slider" style="width: ' + (postInfo.image_width - 81) + 'px; min-width: 269px;"></div> </div> <p id="save-video-link"><a href="' + postInfo.large_file_img_src + '">Save as video (right click and save)</a> | <a href="' + updateURLQuery(location.href, {original: "0"}) + '">View sample</a> | <a href="#" id="bbb-note-toggle">Toggle notes</a></p> </div>';
+
+					// Make notes toggle when clicking the ugoira animation.
+					noteToggleInit();
+
+					// Prep the "toggle notes" link. The "toggle notes" link is added here just for consistency's sake.
+					noteToggleLinkInit();
+
+					if (postInfo.pixiv_ugoira_frame_data.data) // Set up the post.
+						ugoiraInit();
+				}
+			}
+			else if (!postInfo.image_height) // Create manual download.
+				imgContainer.innerHTML = '<div id="note-container"></div> <div id="note-preview"></div><p><a href="' + postInfo.file_img_src + '">Save this file (right click and save)</a></p>';
+			else { // Create image
+				var imgDesc = (getMeta("og:title") || "").replace(" - Danbooru", "");
+				var newWidth, newHeight, newUrl; // If/else variables.
+
+				if (load_sample_first && postInfo.has_large) {
+					newWidth = postInfo.large_width;
+					newHeight = postInfo.large_height;
+					newUrl = postInfo.large_file_img_src;
+				}
+				else {
+					newWidth = postInfo.image_width;
+					newHeight = postInfo.image_height;
+					newUrl = postInfo.file_img_src;
+				}
+
+				imgContainer.innerHTML = '<div id="note-container"></div> <div id="note-preview"></div> <img alt="' + postInfo.tag_string + '" data-fav-count="' + postInfo.fav_count + '" data-flags="' + postInfo.flags + '" data-has-active-children="' + postInfo.has_active_children + '" data-has-children="' + postInfo.has_children + '" data-large-height="' + postInfo.large_height + '" data-large-width="' + postInfo.large_width + '" data-original-height="' + postInfo.image_height + '" data-original-width="' + postInfo.image_width + '" data-rating="' + postInfo.rating + '" data-score="' + postInfo.score + '" data-tags="' + postInfo.tag_string + '" data-pools="' + postInfo.pool_string + '" data-uploader="' + postInfo.uploader_name + '" height="' + newHeight + '" width="' + newWidth + '" id="image" src="' + newUrl + '" /> <img src="about:blank" height="1" width="1" id="bbb-loader" style="position: absolute; right: 0px; top: 0px; display: none;"/> <p class="desc">' + imgDesc + '</p>';
+
+				bbb.el.bbbLoader = document.getElementById("bbb-loader");
+
+				// Create/replace the elements related to image swapping and set them up.
+				swapImageInit();
+
+				if (alternate_image_swap) // Make sample/original images swap when clicking the image.
+					alternateImageSwap();
+				else // Make notes toggle when clicking the image.
+					noteToggleInit();
+			}
+
+			// Enable drag scrolling.
+			dragScrollInit();
+
+			// Resize the content if desired.
+			if (post_resize)
+				resizePost(post_resize_mode);
+
+			// Enable translation mode.
+			translationModeInit();
+
+			// Disable embedded notes.
+			disableEmbeddedNotes();
+
+			// Load/reload notes.
+			Danbooru.Note.load_all("bbb");
+
+			// Auto position the content if desired.
+			autoscrollPost();
+
+			// Blacklist.
+			blacklistUpdate();
+
+			// Fix the parent/child notice(s).
+			checkRelations();
 		}
-
-		// Enable drag scrolling.
-		dragScrollInit();
-
-		// Resize the content if desired.
-		if (post_resize)
-			resizePost(post_resize_mode);
-
-		// Enable translation mode.
-		translationModeInit();
-
-		// Disable embedded notes.
-		disableEmbeddedNotes();
-
-		// Load/reload notes.
-		Danbooru.Note.load_all("bbb");
-
-		// Auto position the content if desired.
-		autoscrollPost();
-
-		// Blacklist.
-		blacklistUpdate();
-
-		// Fix the parent/child notice(s).
-		checkRelations();
 	}
 
 	function parseComments(xml) {
@@ -996,13 +1000,13 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 		var activePost = bbb.post.info;
 		var numPosts = posts.length;
 		var relationCookie = getCookie()["show-relationship-previews"];
-		var showPreview = (relationCookie === undefined || relationCookie === "1" ? true : false);
+		var showPreview = (relationCookie === undefined || relationCookie === "1");
 		var childSpan = document.createElement("span");
 		var query = "?tags=parent:" + parentId + (show_deleted ? "+status:any" : "") + (thumbnail_count ? "&limit=" + thumbnail_count : "");
 		var thumbs = "";
 		var forceShowDeleted = activePost.is_deleted; // If the parent is deleted or the active post is deleted, all deleted posts are shown.
 		var parentDeleted = false;
-		var isSafebooru = (location.host.indexOf("safebooru") > -1 ? true : false);
+		var isSafebooru = (location.host.indexOf("safebooru") > -1);
 		var target, previewLinkId, previewLinkTxt, previewId, classes, msg, displayStyle; // If/else variables.
 		var i, post; // Loop variables.
 
@@ -1387,7 +1391,7 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 			id: Number(imgContainer.getAttribute("data-id")),
 			pixiv_id: Number(imgContainer.getAttribute("data-pixiv-id")) || null,
 			fav_count: Number(imgContainer.getAttribute("data-fav-count")),
-			has_children: (imgContainer.getAttribute("data-has-children") === "true" ? true : false),
+			has_children: (imgContainer.getAttribute("data-has-children") === "true"),
 			has_active_children: (postTag === "IMG" || postTag === "CANVAS" ? postEl.getAttribute("data-has-active-children") === "true" : !!target.getElementsByClassName("notice-parent")[0]),
 			fav_string: getMeta("favorites", docEl),
 			parent_id: (imgContainer.getAttribute("data-parent-id") ? Number(imgContainer.getAttribute("data-parent-id")) : null),
@@ -1402,15 +1406,15 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 			pool_string: imgContainer.getAttribute("data-pools"),
 			uploader_name: imgContainer.getAttribute("data-uploader"),
 			approver_id: imgContainer.getAttribute("data-approver-id") || null,
-			is_deleted: (flags.indexOf("deleted") < 0 ? false : true),
-			is_flagged: (flags.indexOf("flagged") < 0 ? false : true),
-			is_pending: (flags.indexOf("pending") < 0 ? false : true),
-			is_banned: (flags.indexOf("banned") < 0 ? false : true),
+			is_deleted: (flags.indexOf("deleted") > -1),
+			is_flagged: (flags.indexOf("flagged") > -1),
+			is_pending: (flags.indexOf("pending") > -1),
+			is_banned: (flags.indexOf("banned") > -1),
 			image_height: Number(imgContainer.getAttribute("data-height")) || null,
 			image_width: Number(imgContainer.getAttribute("data-width")) || null
 		};
 
-		imgInfo.has_large = (imgInfo.large_file_url !== imgInfo.file_url ? true : false);
+		imgInfo.has_large = (imgInfo.large_file_url !== imgInfo.file_url);
 
 		var isUgoira = (postTag === "CANVAS" || (imgInfo.file_ext === "zip" && /(?:^|\s)ugoira(?:$|\s)/.test(imgInfo.tag_string)));
 
@@ -1482,7 +1486,7 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 			id: Number(post.getAttribute("data-id")),
 			pixiv_id: Number(post.getAttribute("data-pixiv-id")) || null,
 			fav_count: Number(post.getAttribute("data-fav-count")),
-			has_children: (post.getAttribute("data-has-children") === "true" ? true : false),
+			has_children: (post.getAttribute("data-has-children") === "true"),
 			has_active_children: post.bbbHasClass("post-status-has-children"), // Assumption. Basically a flag for the children class.
 			fav_string: (post.getAttribute("data-is-favorited") === "true" ? "fav:" + getMeta("current-user-id") : ""), // Faked since thumbnails don't provide the full list of favorites.
 			parent_id: (post.getAttribute("data-parent-id") ? Number(post.getAttribute("data-parent-id")) : null),
@@ -1493,19 +1497,25 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 			pool_string: post.getAttribute("data-pools"),
 			uploader_name: post.getAttribute("data-uploader"),
 			approver_id: post.getAttribute("data-approver-id") || null,
-			is_deleted: (flags.indexOf("deleted") < 0 ? false : true),
-			is_flagged: (flags.indexOf("flagged") < 0 ? false : true),
-			is_pending: (flags.indexOf("pending") < 0 ? false : true),
-			is_banned: (flags.indexOf("banned") < 0 ? false : true),
+			is_deleted: (flags.indexOf("deleted") > -1),
+			is_flagged: (flags.indexOf("flagged") > -1),
+			is_pending: (flags.indexOf("pending") > -1),
+			is_banned: (flags.indexOf("banned") > -1),
 			image_height: Number(post.getAttribute("data-height")) || null,
 			image_width: Number(post.getAttribute("data-width")) || null
 		};
 
-		var isUgoira = (imgInfo.file_ext === "zip" && /(?:^|\s)ugoira(?:$|\s)/.test(imgInfo.tag_string));
-		var isAnimatedImg = /(?:^|\s)animated_(?:gif|png)(?:$|\s)/.test(imgInfo.tag_string);
-		var isBigImg = (imgInfo.image_width > 850 && imgInfo.file_ext !== "swf" && imgInfo.file_ext !== "webm" && imgInfo.file_ext !== "mp4");
+		if (imgInfo.file_url)
+			imgInfo.has_large = (imgInfo.file_url !== imgInfo.large_file_url);
+		else {
+			var isUgoira = /(?:^|\s)ugoira(?:$|\s)/.test(imgInfo.tag_string);
+			var isAnimatedImg = /(?:^|\s)animated_(?:gif|png)(?:$|\s)/.test(imgInfo.tag_string);
+			var isVideo = /(?:^|\s)(?:webm|mp4)(?:$|\s)/.test(imgInfo.tag_string);
+			var isFlash = /(?:^|\s)flash(?:$|\s)/.test(imgInfo.tag_string);
+			var isBigImg = (imgInfo.image_width > 850 && !isFlash && !isVideo);
 
-		imgInfo.has_large = (!isAnimatedImg && (isBigImg || isUgoira) ? true : false);
+			imgInfo.has_large = ((!isAnimatedImg && isBigImg) || isUgoira);
+		}
 
 		return formatInfo(imgInfo);
 	}
@@ -3969,7 +3979,7 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 		var fixParent = false;
 		var fixChild = false;
 		var relationCookie = getCookie()["show-relationship-previews"];
-		var showPreview = (relationCookie === undefined || relationCookie === "1" ? true : false);
+		var showPreview = (relationCookie === undefined || relationCookie === "1");
 		var parentLink = document.getElementById("has-children-relationship-preview-link");
 		var childLink = document.getElementById("has-parent-relationship-preview-link");
 		var thumbCount, deletedCount; // If/else variable.
@@ -5227,7 +5237,7 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 				page: newPage,
 				page_num: [pageNum],
 				paginator: paginator,
-				ready: (!endless_fill || numNewPosts === limit || lastPage ? true : false)
+				ready: (!endless_fill || numNewPosts === limit || lastPage)
 			};
 
 			bbb.endless.pages.push(newPageObject);
@@ -5465,7 +5475,7 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 
 			if (blacklistSearch[0]) {
 				var entryHash = blacklistTag.bbbHash();
-				var entryDisabled = (blacklistDisabled || (blacklist_session_toggle && cookies["b" + entryHash] === "1") ? true : false);
+				var entryDisabled = (blacklistDisabled || (blacklist_session_toggle && cookies["b" + entryHash] === "1"));
 				var newEntry = {active: !entryDisabled, tags:blacklistTag, search:blacklistSearch, matches: [], index: i, hash: entryHash};
 
 				bbb.blacklist.entries.push(newEntry);
@@ -8379,34 +8389,6 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 			sessionStorage.removeItem("bbb_posts_cache");
 	}
 
-	function arrowNav() {
-		// Bind the arrow keys to Danbooru's page navigation.
-		var paginator = getPaginator();
-
-		if (!arrow_nav || (!paginator && gLoc !== "popular")) // If the paginator exists, arrow navigation should be applicable.
-			return;
-
-		// Create the hotkeys for the left and right arrows.
-		createHotkey("37", function() { danbooruNav("prev"); });
-		createHotkey("39", function() { danbooruNav("next"); });
-	}
-
-	function danbooruNav(dir) {
-		// Determine the correct Danbooru page function and use it.
-		if (gLoc === "popular") {
-			if (dir === "prev")
-				Danbooru.PostPopular.nav_prev();
-			else if (dir === "next")
-				Danbooru.PostPopular.nav_next();
-		}
-		else {
-			if (dir === "prev")
-				Danbooru.Paginator.prev_page();
-			else if (dir === "next")
-				Danbooru.Paginator.next_page();
-		}
-	}
-
 	function autohideSidebar() {
 		// Show the sidebar when it gets focus, hide it when it loses focus, and only allow select elements to retain focus.
 		var sidebar = document.getElementById("sidebar");
@@ -8839,7 +8821,7 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 
 	function isGoldLevel() {
 		// Determine whether the user is at the gold account level or higher.
-		return (getUserData("level") >= 30 ? true : false);
+		return (getUserData("level") >= 30);
 	}
 
 	function accountSettingCheck(scriptSetting) {
