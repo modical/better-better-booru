@@ -812,9 +812,6 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 			// Enable the "Resize to window", "Toggle Notes", "Random Post", and "Find similar" options for logged out users.
 			createOptionsSection();
 
-			// Fix the direct post links in the information and options sections for hidden posts.
-			fixPostDownloadLinks();
-
 			// Replace the "resize to window" link with new resize links.
 			modifyResizeLink();
 
@@ -3616,48 +3613,6 @@ function bbbScript() { // Wrapper for injecting the script into the document.
 		options.id = "post-options";
 		options.innerHTML = '<h1>Options</h1><ul><li><a href="#" id="image-resize-to-window-link">Resize to window</a></li><li>Download</li><li><a id="random-post" href="http://danbooru.donmai.us/posts/random">Random post</a></li>' + (postInfo.preview_file_url ? '<li><a href="http://danbooru.iqdb.org/db-search.php?url=http://danbooru.donmai.us' + postInfo.preview_file_url + '">Find similar</a></li>' : '') + '</ul>';
 		infoSection.parentNode.insertBefore(options, infoSection.nextElementSibling);
-	}
-
-	function fixPostDownloadLinks() {
-		// Fix the "size" and "download" links in the sidebar.
-		var postInfo = bbb.post.info;
-		var i, il; // Loop variables.
-
-		// Fix the "size" link.
-		var infoSection = document.getElementById("post-information");
-
-		if (infoSection) {
-			var infoItems = infoSection.getElementsByTagName("li");
-			var sizeRegex = /^(\s*Size:\s+)([\d\.]+\s+\S+)(\s+[\s\S]+)$/i;
-
-			for (i = 0, il = infoItems.length; i < il; i++) {
-				var infoItem = infoItems[i];
-				var infoText = infoItem.textContent.match(sizeRegex);
-
-				if (infoText) {
-					infoItem.innerHTML = infoText[1] + '<a href="' + postInfo.file_img_src + '">' + infoText[2] + '</a>' + infoText[3];
-					break;
-				}
-			}
-		}
-
-		// Fix the "download" link.
-		var optionsSection = document.getElementById("post-options");
-
-		if (optionsSection) {
-			var optionItems = optionsSection.getElementsByTagName("li");
-			var downloadRegex = /^\s*Download\s*$/i;
-			var downloadName = (getMeta("og:title") || "").replace(" - Danbooru", " - ");
-
-			for (i = 0, il = optionItems.length; i < il; i++) {
-				var optionItem = optionItems[i];
-
-				if (downloadRegex.test(optionItem.textContent)) {
-					optionItem.innerHTML = '<a download="' + downloadName + postInfo.md5 + '.' + postInfo.file_ext + '" href="' + postInfo.file_img_src + '">Download</a>';
-					break;
-				}
-			}
-		}
 	}
 
 	function modifyResizeLink() {
